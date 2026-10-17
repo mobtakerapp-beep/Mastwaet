@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة المستويات الذكية - تصميم: مروة أبوبكر</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #fdf4ff 0%, #eef2ff 50%, #f0fdf4 100%);
+            min-height: 100vh;
+        }
+        .wheel-container {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            margin: 0 auto;
+            filter: drop-shadow(0 15px 25px rgba(99, 102, 241, 0.25));
+        }
+        #wheelCanvas {
+            transition: transform 4s cubic-bezier(0.15, 0.85, 0.15, 1);
+        }
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 35px solid #ec4899;
+            z-index: 20;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.8); }
+        }
+        .pulse-card {
+            animation: pulse-glow 3s infinite;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certModal, #certModal * {
+                visibility: visible;
+            }
+            #certModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+            }
+            .print\:hidden {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800 flex flex-col justify-between min-h-screen">
+
+    <!-- Activation Modal Overlay -->
+    <div id="activation-overlay" class="fixed inset-0 bg-indigo-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border-4 border-amber-400 text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-200 rounded-full blur-2xl opacity-50"></div>
+            <div class="text-5xl mb-3 animate-bounce">🔐</div>
+            <h2 class="text-2xl font-black text-indigo-950 mb-1">تفعيل منصة المستويات الذكية</h2>
+            <p class="text-xs text-indigo-700 font-bold mb-6">تصميم وإشراف: <span class="text-purple-700 font-black">مروة أبوبكر</span></p>
+            
+            <form onsubmit="verifyActivation(event)" class="space-y-4 text-right">
+                <div>
+                    <label class="block text-xs font-black text-gray-700 mb-1">أدخلي سيريل التفعيل الخاص بكِ:</label>
+                    <input type="text" id="serial-input" required placeholder="مثال: MARWA-XXXX-XXXX" class="w-full border-2 border-indigo-200 rounded-2xl px-4 py-3 text-center tracking-wider font-bold text-indigo-900 uppercase focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-indigo-50/50">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-black py-3.5 rounded-2xl shadow-xl hover:scale-[1.02] transition text-sm">
+                    تحقق وتفعيل المنصة 🚀
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs">
+                <span class="text-gray-400">تحتاجين سيريل تفعيل؟</span>
+                <button onclick="openAdminModal()" class="text-indigo-600 font-bold hover:underline">لوحة تحكم مروة أبوبكر ⚙️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Main Container -->
+    <div id="app-main-content" class="hidden flex flex-col justify-between min-h-screen">
+        <div>
+            <header class="bg-gradient-to-r from-indigo-900 via-purple-900 to-indigo-900 text-white shadow-2xl sticky top-0 z-40 border-b-4 border-amber-400">
+                <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+                    <div class="flex items-center space-x-3 space-x-reverse">
+                        <span class="text-3xl animate-spin" style="animation-duration: 10s;">🎡</span>
+                        <div>
+                            <h1 class="text-xl font-black text-amber-300">منصة المستويات الذكية</h1>
+                            <p class="text-xs text-indigo-200">عدالة وسرعة في اختيار الطالبة | تصميم: <span class="text-amber-400 font-bold">مروة أبوبكر</span></p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2 sm:mt-0 items-center">
+                        <button onclick="switchTab('classes')" id="btn-classes" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-500">إدارة الفصول والطلبة</button>
+                        <button onclick="switchTab('wheel')" id="btn-wheel" class="px-4 py-2 bg-indigo-900/80 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-700">عجلة المستويات التفاعلية</button>
+                        <button onclick="switchTab('reports')" id="btn-reports" class="px-4 py-2 bg-indigo-900/80 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-700">تقرير الحصة والنقاط</button>
+                        <button onclick="openAdminModal()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-indigo-950 rounded-2xl text-xs font-black transition shadow-lg">⚙️ توليد سريلات</button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="container mx-auto px-4 py-6 max-w-6xl">
+                <!-- TAB 1: CLASSES & STUDENTS -->
+                <section id="tab-classes" class="space-y-6">
+                    <div class="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border-2 border-indigo-100">
+                        <div class="flex flex-wrap justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-2xl font-black text-indigo-900">إدارة الفصول والمستويات</h2>
+                                <p class="text-sm text-gray-500">أضيفي فصلكِ ثم ابدئي بإضافة طالباتكِ وتصنيفهن (🟢 مبتدئ، 🟡 متوسط، 🔴 متقدم)</p>
+                            </div>
+                            <button onclick="openAddClassModal()" class="mt-3 sm:mt-0 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition flex items-center gap-2">
+                                <span>➕</span> إضافة فصل جديد
+                            </button>
+                        </div>
+                        <div id="classes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: WHEEL & ACTIVE SESSION -->
+                <section id="tab-wheel" class="hidden space-y-6">
+                    <div class="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border-2 border-indigo-100">
+                        <div class="flex flex-wrap justify-between items-center mb-6">
+                            <div>
+                                <h2 id="active-class-title" class="text-2xl font-black text-indigo-900">اختر فصلاً للبدء</h2>
+                                <p class="text-sm text-gray-500">عجلة ذكية تضمن عدم تكرار أي طالبة حتى ينتهي دور الجميع تماماً</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <select id="select-active-class" onchange="changeActiveClass(this.value)" class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl px-4 py-2.5 font-bold text-indigo-900 focus:outline-none shadow-inner">
+                                    <!-- Options -->
+                                </select>
+                                <button onclick="resetSession()" class="bg-amber-100 text-amber-800 px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-amber-200 transition shadow">إعادة تعيين الدور</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                            <!-- Wheel Column -->
+                            <div class="lg:col-span-6 flex flex-col items-center bg-gradient-to-b from-indigo-50/80 via-purple-50/50 to-pink-50/50 p-8 rounded-3xl border-2 border-indigo-100 shadow-inner">
+                                <div class="wheel-container my-4">
+                                    <div class="pointer"></div>
+                                    <canvas id="wheelCanvas" width="340" height="340" class="rounded-full shadow-2xl border-8 border-white bg-white"></canvas>
+                                </div>
+                                <button onclick="spinWheel()" id="spin-btn" class="mt-6 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-black px-12 py-4 rounded-2xl shadow-2xl hover:scale-105 transition text-xl tracking-wide border-2 border-white/50">
+                                    🎡 دوّر العجلة الآن!
+                                </button>
+                            </div>
+
+                            <!-- Selected Student & Question Column -->
+                            <div class="lg:col-span-6 space-y-6">
+                                <div id="result-card" class="hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-950 text-white p-6 rounded-3xl shadow-2xl relative overflow-hidden pulse-card border-2 border-amber-400">
+                                    <div class="absolute -left-6 -bottom-6 text-8xl opacity-10">🎓</div>
+                                    <span id="res-level-badge" class="px-3.5 py-1 rounded-full text-xs font-black bg-amber-400 text-indigo-950 inline-block mb-3 shadow">مستوى متقدم</span>
+                                    <h3 class="text-3xl font-black mb-1 text-amber-200" id="res-student-name">اسم الطالبة</h3>
+                                    <p class="text-indigo-200 text-sm mb-4">التصنيف: <span id="res-student-level" class="font-bold text-white"></span></p>
+                                    
+                                    <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/20 mb-4 shadow-inner">
+                                        <p class="text-xs text-amber-300 font-semibold mb-1">السؤال المخصص للمستوى:</p>
+                                        <p id="res-question" class="text-lg font-bold text-white leading-relaxed">السؤال سيظهر هنا...</p>
+                                    </div>
+
+                                    <div class="flex gap-3">
+                                        <button onclick="gradeAnswer(true)" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white py-3.5 rounded-2xl font-black shadow-lg transition flex items-center justify-center gap-2 text-sm">
+                                            <span>✅</span> إجابة صحيحة (+10 نقاط)
+                                        </button>
+                                        <button onclick="gradeAnswer(false)" class="flex-1 bg-gradient-to-r from-rose-500 to-pink-600 hover:opacity-95 text-white py-3.5 rounded-2xl font-black shadow-lg transition flex items-center justify-center gap-2 text-sm">
+                                            <span>❌</span> تحتاج لدعم
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Remaining Queue info -->
+                                <div class="bg-indigo-50/70 rounded-3xl p-5 border-2 border-indigo-100 shadow-sm">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <span class="font-bold text-indigo-900 text-sm">الطالبات المتبقيات في هذا الدور:</span>
+                                        <span id="remaining-count" class="bg-indigo-600 text-white px-3.5 py-0.5 rounded-full text-xs font-black shadow">0</span>
+                                    </div>
+                                    <div id="remaining-chips" class="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                                        <!-- Chips -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: REPORTS -->
+                <section id="tab-reports" class="hidden space-y-6">
+                    <div class="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border-2 border-indigo-100">
+                        <div class="flex flex-wrap justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-2xl font-black text-indigo-900">تقرير الحصة والنقاط</h2>
+                                <p class="text-sm text-gray-500">تابعي أداء الطالبات وتتويج نجمة الحصة بكل جدارة</p>
+                            </div>
+                            <button onclick="generateStarCertificate()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition flex items-center gap-2">
+                                <span>🌟</span> شهادة نجمة الحصة
+                            </button>
+                        </div>
+                        <div id="reports-content" class="space-y-4">
+                            <!-- Report Table -->
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer class="bg-white/90 border-t-2 border-indigo-100 py-5 text-center mt-12 shadow-sm">
+            <p class="text-sm font-bold text-indigo-900">
+                منصة المستويات الذكية &copy; 2026 — تصميم: <span class="text-purple-600 font-black">مروة أبوبكر</span>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Add Class Modal -->
+    <div id="classModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-indigo-100">
+            <h3 class="text-xl font-black text-indigo-900 mb-4">إنشاء فصل جديد</h3>
+            <form onsubmit="saveClass(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">اسم الفصل أو الصف:</label>
+                    <input type="text" id="classNameInput" required placeholder="مثال: الصف الخامس / 1" class="w-full border-2 border-indigo-200 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('classModal')" class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200">إلغاء</button>
+                    <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-black shadow-lg hover:bg-indigo-700">حفظ الفصل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Students Modal -->
+    <div id="studentsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border-4 border-indigo-100 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-class-title" class="text-xl font-black text-indigo-900">إدارة طالبات الفصل</h3>
+                <button onclick="closeModal('studentsModal')" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
+            </div>
+            <div class="bg-indigo-50/80 p-4 rounded-2xl mb-4 border-2 border-indigo-100 shadow-inner">
+                <h4 class="font-bold text-indigo-900 text-sm mb-2">إضافة طالبة جديدة مع تحديد مستواها:</h4>
+                <form onsubmit="addStudent(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                    <input type="text" id="studentNameInput" required placeholder="اسم الطالبة..." class="sm:col-span-5 border-2 border-indigo-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white">
+                    <select id="studentLevelInput" class="sm:col-span-4 border-2 border-indigo-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none font-bold bg-white">
+                        <option value="beginner">🟢 مبتدئ (تحتاج دعم)</option>
+                        <option value="intermediate" selected>🟡 متوسط</option>
+                        <option value="advanced">🔴 متقدم (متفوقة)</option>
+                    </select>
+                    <button type="submit" class="sm:col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm py-2.5 shadow">إضافة</button>
+                </form>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="students-list-container"></div>
+        </div>
+    </div>
+
+    <!-- Questions Bank Modal -->
+    <div id="questionsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border-4 border-indigo-100 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black text-indigo-900">بنك الأسئلة حسب المستويات</h3>
+                <button onclick="closeModal('questionsModal')" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
+            </div>
+            <div class="space-y-4 flex-1 overflow-y-auto pr-1">
+                <div>
+                    <label class="block text-xs font-black text-emerald-700 mb-1">🟢 أسئلة المستوى المبتدئ:</label>
+                    <textarea id="q-beginner" rows="3" class="w-full border-2 border-emerald-200 rounded-2xl p-3 text-sm focus:outline-none bg-emerald-50/30"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-amber-700 mb-1">🟡 أسئلة المستوى المتوسط:</label>
+                    <textarea id="q-intermediate" rows="3" class="w-full border-2 border-amber-200 rounded-2xl p-3 text-sm focus:outline-none bg-amber-50/30"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-rose-700 mb-1">🔴 أسئلة المستوى المتقدم:</label>
+                    <textarea id="q-advanced" rows="3" class="w-full border-2 border-rose-200 rounded-2xl p-3 text-sm focus:outline-none bg-rose-50/30"></textarea>
+                </div>
+            </div>
+            <div class="pt-4 flex justify-end">
+                <button onclick="saveQuestions()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-2xl font-black text-sm shadow-lg">حفظ الأسئلة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Star Certificate Modal -->
+    <div id="certModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div id="printable-certificate" class="bg-gradient-to-br from-amber-50 via-white to-yellow-100 border-8 border-amber-400 rounded-3xl p-8 max-w-lg w-full shadow-2xl text-center relative">
+            <div class="absolute top-4 left-4 text-xs font-bold text-amber-600 bg-amber-200 px-3 py-1 rounded-full print:hidden">🌟 نجمة الحصة</div>
+            <div class="text-6xl mb-2 animate-bounce">👑</div>
+            <h3 class="text-3xl font-black text-amber-900 mb-1">شهادة تميز ونجم الحصة</h3>
+            <p class="text-sm text-purple-800 font-bold mb-2">إشراف وتصميم: <span class="text-indigo-900 font-black">مروة أبوبكر</span></p>
+            <p class="text-xs text-gray-600 mb-6 border-b-2 border-amber-200 pb-3">تُقر المعلمة بأن الطالبة المتألقة قد أثبتت تفوقها اليوم بكل استحقاق</p>
+            
+            <div class="bg-white/90 border-2 border-amber-300 rounded-2xl p-6 shadow-inner mb-6">
+                <p class="text-xs text-gray-500 mb-1">النجمة الحاصلة على أعلى النقاط:</p>
+                <h4 id="star-student-name" class="text-3xl font-black text-indigo-900 mb-2">اسم الطالبة</h4>
+                <p id="star-student-score" class="text-sm font-black text-amber-600">0 نقطة</p>
+            </div>
+
+            <div class="flex gap-3 justify-center print:hidden">
+                <button onclick="window.print()" class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:opacity-90 text-white font-black px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm">
+                    <span>🖨️</span> طباعة الشهادة
+                </button>
+                <button onclick="closeModal('certModal')" class="bg-gray-600 hover:bg-gray-700 text-white font-black px-6 py-3 rounded-2xl shadow-xl text-sm">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Serial Generator Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border-4 border-purple-500">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black text-purple-900">⚙️ لوحة إدارة وسريلات مروة أبوبكر</h3>
+                <button onclick="closeModal('adminModal')" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
+            </div>
+            <p class="text-xs text-gray-600 mb-4">هذه اللوحة خاصة بكِ لتوليد سريلات تفعيل فريدة لكل معلمة (السريال يعمل مرة واحدة فقط عند أول تفعيل ثم يرتبط بالجهاز).</p>
+            
+            <div class="space-y-4">
+                <div class="bg-purple-50 p-4 rounded-2xl border-2 border-purple-200">
+                    <label class="block text-xs font-black text-purple-900 mb-2">توليد سيريل جديد لمعلمة:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-serial-output" readonly placeholder="انقر توليد للحصول على سيريل" class="w-full bg-white border-2 border-purple-200 rounded-xl px-3 py-2 text-sm font-mono font-bold text-center text-purple-900">
+                        <button onclick="generateNewSerial()" class="bg-purple-600 hover:bg-purple-700 text-white font-black px-5 py-2 rounded-xl text-sm shadow">توليد</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-black text-gray-700 mb-2">السريلات المُولدة وحالتها:</h4>
+                    <div id="serials-list-container" class="max-h-40 overflow-y-auto space-y-2 border-2 border-gray-100 rounded-2xl p-3 bg-gray-50 text-xs">
+                        <!-- Serials list -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Safe storage helpers (never crash if storage is blocked/corrupted)
+        function safeGet(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (raw === null) return fallback;
+                const val = JSON.parse(raw);
+                return (val === null || val === undefined) ? fallback : val;
+            } catch (err) {
+                return fallback;
+            }
+        }
+        let storageWarned = false;
+        function safeSet(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (err) {
+                if (!storageWarned) {
+                    storageWarned = true;
+                    setTimeout(() => showToast('⚠️ المتصفح لا يسمح بالحفظ (وضع التصفح الخاص؟). افتحي الموقع في نافذة عادية.'), 300);
+                }
+                return false;
+            }
+        }
+        // Ask the browser not to auto-clear our data
+        try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (err) {}
+
+        // Data & Licensing State
+        let licenseData = safeGet('smart_levels_license', { activated: false, usedSerials: [], serial: null });
+        let generatedSerials = safeGet('smart_levels_gen_serials', [
+            { code: 'MARWA-MASTER-2026', used: false, permanent: true }
+        ]);
+        let appData = safeGet('smart_levels_data_v2', { classes: [], activeClassId: null });
+
+        let currentManagingClassId = null;
+        let currentSelectedStudent = null;
+        let isSpinning = false;
+        let currentRotation = 0;
+
+        // Check license on load
+        window.onload = function() {
+            if (licenseData.activated) {
+                document.getElementById('activation-overlay').classList.add('hidden');
+                document.getElementById('app-main-content').classList.remove('hidden');
+                renderClasses();
+            } else {
+                document.getElementById('activation-overlay').classList.remove('hidden');
+            }
+        };
+
+        // Self-validating serials: MRW-AAAA-BBBB where BBBB is derived from AAAA
+        const SERIAL_SALT = 'marwa-abubakr-smart-levels-2026';
+        const SERIAL_CHARS = 'ABCDEFGHIJKLMNPQRSTUVWXYZ23456789';
+        function serialCheck(part1) {
+            const str = part1 + SERIAL_SALT;
+            let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+            for (let i = 0; i < str.length; i++) {
+                const ch = str.charCodeAt(i);
+                h1 = Math.imul(h1 ^ ch, 2654435761);
+                h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            let n = (h2 >>> 0) * 4294967296 + (h1 >>> 0);
+            let out = '';
+            for (let i = 0; i < 4; i++) {
+                out += SERIAL_CHARS.charAt(n % SERIAL_CHARS.length);
+                n = Math.floor(n / SERIAL_CHARS.length);
+            }
+            return out;
+        }
+        function isValidSerialFormat(code) {
+            const m = /^MRW-([A-Z0-9]{4})-([A-Z0-9]{4})$/.exec(code);
+            return !!m && serialCheck(m[1]) === m[2];
+        }
+
+        function verifyActivation(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('serial-input').value.trim().toUpperCase();
+
+            if (inputVal === 'MARWA-MASTER-2026') {
+                licenseData.activated = true;
+                licenseData.serial = inputVal;
+                safeSet('smart_levels_license', licenseData);
+                document.getElementById('activation-overlay').classList.add('hidden');
+                document.getElementById('app-main-content').classList.remove('hidden');
+                renderClasses();
+                showToast('مرحباً بكِ أستاذة مروة! تم التفعيل بنجاح 🌟');
+                return;
+            }
+
+            const foundSerial = generatedSerials.find(s => s.code === inputVal);
+            if (foundSerial) {
+                if (foundSerial.used) {
+                    showToast('⚠️ هذا السريال تم استخدامه مسبقاً على هذا الجهاز!');
+                    return;
+                }
+                foundSerial.used = true;
+                safeSet('smart_levels_gen_serials', generatedSerials);
+            } else if (!isValidSerialFormat(inputVal)) {
+                showToast('❌ السريال غير صحيح. تأكدي من الرقم.');
+                return;
+            }
+
+            licenseData.activated = true;
+            licenseData.serial = inputVal;
+            licenseData.activatedAt = new Date().toISOString();
+            safeSet('smart_levels_license', licenseData);
+
+            document.getElementById('activation-overlay').classList.add('hidden');
+            document.getElementById('app-main-content').classList.remove('hidden');
+            renderClasses();
+            showToast('🎉 تم تفعيل المنصة بنجاح!');
+        }
+
+        // Admin Serial Generation
+        function openAdminModal() {
+            renderSerialsList();
+            document.getElementById('adminModal').classList.remove('hidden');
+        }
+
+        function generateNewSerial() {
+            let part1 = '';
+            for (let i = 0; i < 4; i++) {
+                part1 += SERIAL_CHARS.charAt(Math.floor(Math.random() * SERIAL_CHARS.length));
+            }
+            const newCode = `MRW-${part1}-${serialCheck(part1)}`;
+
+            generatedSerials.push({ code: newCode, used: false, permanent: false });
+            safeSet('smart_levels_gen_serials', generatedSerials);
+            
+            document.getElementById('new-serial-output').value = newCode;
+            renderSerialsList();
+            showToast('✨ تم توليد سيريل جديد بنجاح');
+        }
+
+        function renderSerialsList() {
+            const container = document.getElementById('serials-list-container');
+            container.innerHTML = '';
+
+            generatedSerials.forEach(s => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm';
+                const statusBadge = s.permanent ? '<span class="text-purple-600 font-bold">سريال رئيسي 👑</span>' : s.used ? '<span class="text-rose-600 font-bold">مستخدم 🔴</span>' : '<span class="text-emerald-600 font-bold">متاح مرة واحدة 🟢</span>';
+                
+                row.innerHTML = `
+                    <span class="font-mono font-bold text-indigo-900">${s.code}</span>
+                    <div class="flex items-center gap-2">
+                        ${statusBadge}
+                        ${!s.permanent ? `<button onclick="navigator.clipboard.writeText('${s.code}'); showToast('تم النسخ!');" class="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-gray-700">📋 نسخ</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // App Standard Logic
+        function saveData() {
+            safeSet('smart_levels_data_v2', appData);
+        }
+
+        function switchTab(tabId) {
+            document.getElementById('tab-classes').classList.add('hidden');
+            document.getElementById('tab-wheel').classList.add('hidden');
+            document.getElementById('tab-reports').classList.add('hidden');
+
+            document.getElementById('btn-classes').className = 'px-4 py-2 bg-indigo-900/80 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-700';
+            document.getElementById('btn-wheel').className = 'px-4 py-2 bg-indigo-900/80 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-700';
+            document.getElementById('btn-reports').className = 'px-4 py-2 bg-indigo-900/80 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-700';
+
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).className = 'px-4 py-2 bg-indigo-700 hover:bg-indigo-600 rounded-2xl text-sm font-bold transition shadow-lg border border-indigo-500';
+
+            if (tabId === 'wheel') initWheelTab();
+            if (tabId === 'reports') renderReports();
+        }
+
+        function renderClasses() {
+            const grid = document.getElementById('classes-grid');
+            const select = document.getElementById('select-active-class');
+            grid.innerHTML = '';
+            select.innerHTML = '';
+
+            if (appData.classes.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-400 bg-indigo-50/50 rounded-3xl border-2 border-dashed border-indigo-200">
+                        <span class="text-4xl block mb-2">📚</span>
+                        <p class="font-bold text-indigo-900 mb-1">لا توجد فصول مضافة بعد</p>
+                        <p class="text-xs text-gray-500">انقر على زر "إضافة فصل جديد" بالأعلى للبدء</p>
+                    </div>`;
+                return;
+            }
+
+            appData.classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                if (c.id === appData.activeClassId) opt.selected = true;
+                select.appendChild(opt);
+
+                const card = document.createElement('div');
+                card.className = 'bg-gradient-to-br from-white to-indigo-50/40 border-2 border-indigo-100 rounded-3xl p-6 shadow-md hover:shadow-2xl transition flex flex-col justify-between';
+                
+                const advCount = c.students.filter(s => s.level === 'advanced').length;
+                const intCount = c.students.filter(s => s.level === 'intermediate').length;
+                const begCount = c.students.filter(s => s.level === 'beginner').length;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-xl font-black text-indigo-900">${c.name}</h3>
+                            <span class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-black">${c.students.length} طالبة</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 text-xs mb-4">
+                            <span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-xl font-bold">🔴 متقدم: ${advCount}</span>
+                            <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-xl font-bold">🟡 متوسط: ${intCount}</span>
+                            <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-xl font-bold">🟢 مبتدئ: ${begCount}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-3 border-t-2 border-indigo-50">
+                        <button onclick="openStudentsModal('${c.id}')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-2xl text-xs font-bold transition shadow">إدارة الطالبات</button>
+                        <button onclick="openQuestionsModal('${c.id}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-2.5 rounded-2xl text-xs font-bold transition shadow">بنك الأسئلة</button>
+                        <button onclick="selectAndGoToWheel('${c.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition shadow">بدء الحصة 🎡</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openAddClassModal() {
+            document.getElementById('classNameInput').value = '';
+            document.getElementById('classModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function saveClass(e) {
+            e.preventDefault();
+            const name = document.getElementById('classNameInput').value.trim();
+            if (!name) return;
+
+            const newClass = {
+                id: 'c_' + Date.now(),
+                name: name,
+                students: [],
+                questions: {
+                    beginner: "ما هي القاعدة الأساسية التي تعلمناها اليوم؟\nاذكري مثالاً بسيطاً.",
+                    intermediate: "قارني بين المفهومين اللذين درسناهما.\nكيف تستخدمين هذه القاعدة في مسألة جديدة؟",
+                    advanced: "ابتكري مسألة جديدة واشرحي حلها.\nلخصي الدرس في فائدة رئيسية عميقة."
+                },
+                remainingQueue: []
+            };
+
+            appData.classes.push(newClass);
+            appData.activeClassId = newClass.id;
+            saveData();
+            closeModal('classModal');
+            renderClasses();
+        }
+
+        function openStudentsModal(classId) {
+            currentManagingClassId = classId;
+            const c = appData.classes.find(x => x.id === classId);
+            document.getElementById('modal-class-title').textContent = `إدارة طالبات: ${c.name}`;
+            renderStudentsList();
+            document.getElementById('studentsModal').classList.remove('hidden');
+        }
+
+        function renderStudentsList() {
+            const container = document.getElementById('students-list-container');
+            const c = appData.classes.find(x => x.id === currentManagingClassId);
+            container.innerHTML = '';
+
+            if (c.students.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-6 text-sm">لم تتم إضافة طالبات بعد.</p>`;
+                return;
+            }
+
+            c.students.forEach(s => {
+                const levelColor = s.level === 'advanced' ? 'bg-rose-100 text-rose-800' : s.level === 'intermediate' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+                const levelName = s.level === 'advanced' ? 'متقدم 🔴' : s.level === 'intermediate' ? 'متوسط 🟡' : 'مبتدئ 🟢';
+
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-gray-50 border-2 border-gray-200 p-3.5 rounded-2xl shadow-sm';
+                row.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-gray-800">${s.name}</span>
+                        <span class="text-xs px-3 py-1 rounded-full font-black ${levelColor}">${levelName}</span>
+                    </div>
+                    <button onclick="removeStudent('${s.id}')" class="text-rose-600 hover:text-rose-800 text-xs font-bold px-3 py-1.5 bg-white border-2 border-rose-200 rounded-xl shadow-sm transition">حذف</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function addStudent(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('studentNameInput');
+            const levelInput = document.getElementById('studentLevelInput');
+            const c = appData.classes.find(x => x.id === currentManagingClassId);
+
+            const newStudent = {
+                id: 's_' + Date.now(),
+                name: nameInput.value.trim(),
+                level: levelInput.value,
+                score: 0,
+                correct: 0,
+                total: 0
+            };
+
+            c.students.push(newStudent);
+            if (!c.remainingQueue.includes(newStudent.id)) {
+                c.remainingQueue.push(newStudent.id);
+            }
+            saveData();
+            nameInput.value = '';
+            renderStudentsList();
+            renderClasses();
+        }
+
+        function removeStudent(studentId) {
+            const c = appData.classes.find(x => x.id === currentManagingClassId);
+            c.students = c.students.filter(s => s.id !== studentId);
+            c.remainingQueue = c.remainingQueue.filter(id => id !== studentId);
+            saveData();
+            renderStudentsList();
+            renderClasses();
+        }
+
+        let currentQuestionsClassId = null;
+        function openQuestionsModal(classId) {
+            currentQuestionsClassId = classId;
+            const c = appData.classes.find(x => x.id === classId);
+            document.getElementById('q-beginner').value = c.questions.beginner || '';
+            document.getElementById('q-intermediate').value = c.questions.intermediate || '';
+            document.getElementById('q-advanced').value = c.questions.advanced || '';
+            document.getElementById('questionsModal').classList.remove('hidden');
+        }
+
+        function saveQuestions() {
+            const c = appData.classes.find(x => x.id === currentQuestionsClassId);
+            c.questions.beginner = document.getElementById('q-beginner').value;
+            c.questions.intermediate = document.getElementById('q-intermediate').value;
+            c.questions.advanced = document.getElementById('q-advanced').value;
+            saveData();
+            closeModal('questionsModal');
+        }
+
+        function selectAndGoToWheel(classId) {
+            appData.activeClassId = classId;
+            saveData();
+            switchTab('wheel');
+        }
+
+        function changeActiveClass(classId) {
+            appData.activeClassId = classId;
+            saveData();
+            initWheelTab();
+        }
+
+        function initWheelTab() {
+            if (!appData.activeClassId && appData.classes.length > 0) {
+                appData.activeClassId = appData.classes[0].id;
+            }
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+            if (!c) {
+                document.getElementById('active-class-title').textContent = 'لا يوجد فصل محدد';
+                const canvas = document.getElementById('wheelCanvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+            document.getElementById('active-class-title').textContent = `الحصة النشطة: ${c.name}`;
+            document.getElementById('result-card').classList.add('hidden');
+            renderWheel();
+            renderRemainingQueue();
+        }
+
+        function renderWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!c || c.students.length === 0) {
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = 'bold 16px Cairo';
+                ctx.textAlign = 'center';
+                ctx.fillText('لا توجد طالبات في الفصل', canvas.width/2, canvas.height/2);
+                return;
+            }
+
+            const activeStudents = c.students.filter(s => c.remainingQueue.includes(s.id));
+            const listToDraw = activeStudents.length > 0 ? activeStudents : c.students;
+            
+            const sliceAngle = (2 * Math.PI) / listToDraw.length;
+            const colors = ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6', '#14b8a6', '#f43f5e'];
+
+            listToDraw.forEach((s, i) => {
+                const startAngle = i * sliceAngle;
+                const endAngle = (i + 1) * sliceAngle;
+
+                ctx.beginPath();
+                ctx.moveTo(170, 170);
+                ctx.arc(170, 170, 160, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(170, 170);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 15px Cairo';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(s.name, 135, 6);
+                ctx.restore();
+            });
+
+            ctx.beginPath();
+            ctx.arc(170, 170, 22, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#6366f1';
+            ctx.stroke();
+        }
+
+        function renderRemainingQueue() {
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+            const countSpan = document.getElementById('remaining-count');
+            const chipsDiv = document.getElementById('remaining-chips');
+
+            if (!c) return;
+
+            countSpan.textContent = c.remainingQueue.length;
+            chipsDiv.innerHTML = '';
+
+            if (c.remainingQueue.length === 0) {
+                chipsDiv.innerHTML = `<span class="text-xs text-indigo-700 font-bold block py-2">🎉 تم اختيار جميع الطالبات في هذا الدور! انقر على إعادة تعيين الدور لبدء جولة جديدة.</span>`;
+                return;
+            }
+
+            c.remainingQueue.forEach(id => {
+                const s = c.students.find(x => x.id === id);
+                if (s) {
+                    const chip = document.createElement('span');
+                    chip.className = 'bg-white border-2 border-indigo-100 text-indigo-900 px-3 py-1 rounded-2xl text-xs font-bold shadow-sm';
+                    chip.textContent = s.name;
+                    chipsDiv.appendChild(chip);
+                }
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+            if (!c || c.students.length === 0) {
+                showToast('الرجاء إضافة طالبات للفصل أولاً.');
+                return;
+            }
+
+            if (c.remainingQueue.length === 0) {
+                c.remainingQueue = c.students.map(s => s.id);
+            }
+
+            isSpinning = true;
+            document.getElementById('result-card').classList.add('hidden');
+            
+            const activeStudents = c.students.filter(s => c.remainingQueue.includes(s.id));
+            const listToDraw = activeStudents.length > 0 ? activeStudents : c.students;
+            
+            const totalSlices = listToDraw.length;
+            const sliceDegree = 360 / totalSlices;
+            
+            const randomIndex = Math.floor(Math.random() * totalSlices);
+            const selectedStudentId = listToDraw[randomIndex].id;
+            currentSelectedStudent = c.students.find(s => s.id === selectedStudentId);
+
+            const targetCenterAngle = (randomIndex * sliceDegree) + (sliceDegree / 2);
+            const degreesNeeded = (270 - targetCenterAngle + 360) % 360;
+            
+            currentRotation = Math.floor(currentRotation / 360) * 360 + 1800 + degreesNeeded;
+            
+            const canvas = document.getElementById('wheelCanvas');
+            canvas.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                showSelectedStudentResult(c, selectedStudentId);
+            }, 4000);
+        }
+
+        function showSelectedStudentResult(c, studentId) {
+            const s = c.students.find(x => x.id === studentId);
+            if (!s) return;
+
+            c.remainingQueue = c.remainingQueue.filter(id => id !== studentId);
+            saveData();
+            renderRemainingQueue();
+
+            document.getElementById('res-student-name').textContent = s.name;
+            const levelText = s.level === 'advanced' ? 'متقدم 🔴 (طالبة متفوقة)' : s.level === 'intermediate' ? 'متوسط 🟡 (طالبة متوسطة)' : 'مبتدئ 🟢 (تحتاج دعم)';
+            document.getElementById('res-student-level').textContent = levelText;
+            document.getElementById('res-level-badge').textContent = s.level === 'advanced' ? 'مستوى متقدم' : s.level === 'intermediate' ? 'مستوى متوسط' : 'مستوى مبتدئ';
+
+            let qText = c.questions[s.level] || "طرح سؤال عام مناسب للمستوى...";
+            const qList = qText.split('\n').filter(Boolean);
+            const randomQ = qList.length > 0 ? qList[Math.floor(Math.random() * qList.length)] : qText;
+            document.getElementById('res-question').textContent = randomQ;
+
+            document.getElementById('result-card').classList.remove('hidden');
+        }
+
+        function gradeAnswer(isCorrect) {
+            if (!currentSelectedStudent) return;
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+            const s = c.students.find(x => x.id === currentSelectedStudent.id);
+
+            s.total += 1;
+            if (isCorrect) {
+                s.correct += 1;
+                s.score += 10;
+            }
+            saveData();
+            document.getElementById('result-card').classList.add('hidden');
+            renderReports();
+        }
+
+        function resetSession() {
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+            if (!c) return;
+            c.remainingQueue = c.students.map(s => s.id);
+            saveData();
+            initWheelTab();
+        }
+
+        function renderReports() {
+            const container = document.getElementById('reports-content');
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+
+            if (!c || c.students.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-8">لا توجد بيانات للعرض، يرجى اختيار فصل وإجراء جلسة أسئلة.</p>`;
+                return;
+            }
+
+            const totalParticipants = c.students.filter(s => s.total > 0).length;
+            const totalCorrectAnswers = c.students.reduce((acc, s) => acc + s.correct, 0);
+            const totalQuestionsAsked = c.students.reduce((acc, s) => acc + s.total, 0);
+            const accuracyPercent = totalQuestionsAsked > 0 ? Math.round((totalCorrectAnswers / totalQuestionsAsked) * 100) : 0;
+
+            let html = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-indigo-50 border-2 border-indigo-100 rounded-3xl p-5 text-center shadow-sm">
+                        <p class="text-xs text-indigo-600 font-bold mb-1">طالبات شاركن</p>
+                        <h4 class="text-3xl font-black text-indigo-900">${totalParticipants} / ${c.students.length}</h4>
+                    </div>
+                    <div class="bg-emerald-50 border-2 border-emerald-100 rounded-3xl p-5 text-center shadow-sm">
+                        <p class="text-xs text-emerald-600 font-bold mb-1">نسبة الإجابات الصحيحة</p>
+                        <h4 class="text-3xl font-black text-emerald-900">${accuracyPercent}%</h4>
+                    </div>
+                    <div class="bg-purple-50 border-2 border-purple-100 rounded-3xl p-5 text-center shadow-sm">
+                        <p class="text-xs text-purple-600 font-bold mb-1">إجمالي الأسئلة المطروحة</p>
+                        <h4 class="text-3xl font-black text-purple-900">${totalQuestionsAsked}</h4>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-4">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-gray-200 text-xs text-gray-500 font-bold">
+                                <th class="py-3 px-4">الطالبة</th>
+                                <th class="py-3 px-4">المستوى</th>
+                                <th class="py-3 px-4">شاركت</th>
+                                <th class="py-3 px-4">إجابات صحيحة</th>
+                                <th class="py-3 px-4">النقاط</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-sm">
+            `;
+
+            c.students.forEach(s => {
+                const levelBadge = s.level === 'advanced' ? '<span class="text-rose-600 font-bold">🔴 متقدم</span>' : s.level === 'intermediate' ? '<span class="text-amber-600 font-bold">🟡 متوسط</span>' : '<span class="text-emerald-600 font-bold">🟢 مبتدئ</span>';
+                html += `
+                    <tr class="hover:bg-indigo-50/50 transition">
+                        <td class="py-3.5 px-4 font-bold text-gray-800">${s.name}</td>
+                        <td class="py-3.5 px-4">${levelBadge}</td>
+                        <td class="py-3.5 px-4 font-semibold">${s.total}</td>
+                        <td class="py-3.5 px-4 text-emerald-600 font-bold">${s.correct}</td>
+                        <td class="py-3.5 px-4 font-black text-indigo-600 text-base">${s.score}+</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function generateStarCertificate() {
+            const c = appData.classes.find(x => x.id === appData.activeClassId);
+            if (!c || c.students.length === 0) {
+                showToast('لا توجد طالبات في هذا الفصل.');
+                return;
+            }
+
+            let topStudent = c.students[0];
+            c.students.forEach(s => {
+                if (s.score > topStudent.score) {
+                    topStudent = s;
+                }
+            });
+
+            document.getElementById('star-student-name').textContent = topStudent.name;
+            document.getElementById('star-student-score').textContent = `${topStudent.score} نقطة مميزة`;
+            document.getElementById('certModal').classList.remove('hidden');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-indigo-900 text-white px-6 py-3 rounded-2xl shadow-2xl text-sm font-black z-50 animate-bounce border-2 border-amber-400';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
