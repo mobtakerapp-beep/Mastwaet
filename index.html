@@ -163,11 +163,10 @@
                                     <div class="absolute -left-6 -bottom-6 text-8xl opacity-10">🎓</div>
                                     <span id="res-level-badge" class="px-3.5 py-1 rounded-full text-xs font-black bg-amber-400 text-indigo-950 inline-block mb-3 shadow">مستوى متقدم</span>
                                     <h3 class="text-3xl font-black mb-1 text-amber-200" id="res-student-name">اسم الطالبة</h3>
-                                    <p class="text-indigo-200 text-sm mb-4">التصنيف: <span id="res-student-level" class="font-bold text-white"></span></p>
-                                    
                                     <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/20 mb-4 shadow-inner">
-                                        <p class="text-xs text-amber-300 font-semibold mb-1">السؤال المخصص للمستوى:</p>
+                                        <p class="text-xs text-amber-300 font-semibold mb-1">السؤال:</p>
                                         <p id="res-question" class="text-lg font-bold text-white leading-relaxed">السؤال سيظهر هنا...</p>
+                                        <img id="res-question-image" alt="صورة السؤال" class="hidden mt-3 mx-auto max-h-64 max-w-full rounded-xl object-contain" />
                                     </div>
 
                                     <div class="flex gap-3">
@@ -271,16 +270,22 @@
             </div>
             <div class="space-y-4 flex-1 overflow-y-auto pr-1">
                 <div>
-                    <label class="block text-xs font-black text-emerald-700 mb-1">🟢 أسئلة المستوى المبتدئ:</label>
+                    <label class="block text-xs font-black text-emerald-700 mb-1">🟢 الأسئلة الخضراء:</label>
                     <textarea id="q-beginner" rows="3" class="w-full border-2 border-emerald-200 rounded-2xl p-3 text-sm focus:outline-none bg-emerald-50/30"></textarea>
+                    <label class="mt-2 inline-flex cursor-pointer items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold">🖼️ رفع صورة للسؤال<input id="img-beginner" type="file" accept="image/*" class="hidden" onchange="handleQuestionImage('beginner',this)"></label>
+                    <div id="preview-beginner" class="mt-2"></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-amber-700 mb-1">🟡 أسئلة المستوى المتوسط:</label>
+                    <label class="block text-xs font-black text-amber-700 mb-1">🟡 الأسئلة الصفراء:</label>
                     <textarea id="q-intermediate" rows="3" class="w-full border-2 border-amber-200 rounded-2xl p-3 text-sm focus:outline-none bg-amber-50/30"></textarea>
+                    <label class="mt-2 inline-flex cursor-pointer items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold">🖼️ رفع صورة للسؤال<input id="img-intermediate" type="file" accept="image/*" class="hidden" onchange="handleQuestionImage('intermediate',this)"></label>
+                    <div id="preview-intermediate" class="mt-2"></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-rose-700 mb-1">🔴 أسئلة المستوى المتقدم:</label>
+                    <label class="block text-xs font-black text-rose-700 mb-1">🔴 الأسئلة الحمراء:</label>
                     <textarea id="q-advanced" rows="3" class="w-full border-2 border-rose-200 rounded-2xl p-3 text-sm focus:outline-none bg-rose-50/30"></textarea>
+                    <label class="mt-2 inline-flex cursor-pointer items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-bold">🖼️ رفع صورة للسؤال<input id="img-advanced" type="file" accept="image/*" class="hidden" onchange="handleQuestionImage('advanced',this)"></label>
+                    <div id="preview-advanced" class="mt-2"></div>
                 </div>
             </div>
             <div class="pt-4 flex justify-end">
@@ -556,9 +561,9 @@
                             <span class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-black">${c.students.length} طالبة</span>
                         </div>
                         <div class="flex flex-wrap gap-2 text-xs mb-4">
-                            <span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-xl font-bold">🔴 متقدم: ${advCount}</span>
-                            <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-xl font-bold">🟡 متوسط: ${intCount}</span>
-                            <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-xl font-bold">🟢 مبتدئ: ${begCount}</span>
+                            <span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-xl font-bold">🔴: ${advCount}</span>
+                            <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-xl font-bold">🟡: ${intCount}</span>
+                            <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-xl font-bold">🟢: ${begCount}</span>
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2 pt-3 border-t-2 border-indigo-50">
@@ -674,20 +679,92 @@
         }
 
         let currentQuestionsClassId = null;
+        let pendingQuestionImages = { beginner: '', intermediate: '', advanced: '' };
+        function renderQuestionImagePreview(level, dataUrl) {
+            const target = document.getElementById('preview-' + level);
+            if (!target) return;
+            target.innerHTML = '';
+            if (!dataUrl) return;
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.alt = 'معاينة صورة السؤال';
+            img.className = 'max-h-36 max-w-full rounded-xl border border-indigo-100 object-contain';
+            target.appendChild(img);
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = 'إزالة الصورة';
+            remove.className = 'mt-1 block text-xs font-bold text-rose-600';
+            remove.onclick = () => {
+                pendingQuestionImages[level] = '';
+                const input = document.getElementById('img-' + level);
+                if (input) input.value = '';
+                renderQuestionImagePreview(level, '');
+            };
+            target.appendChild(remove);
+        }
+        function handleQuestionImage(level, input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('اختاري ملف صورة فقط.');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const maxSide = 1000;
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(img.width * scale));
+                    canvas.height = Math.max(1, Math.round(img.height * scale));
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.72);
+                    const candidate = JSON.parse(JSON.stringify(appData));
+                    const targetClass = candidate.classes.find(x => x.id === currentQuestionsClassId);
+                    if (!targetClass) return;
+                    if (!targetClass.questionImages) targetClass.questionImages = { beginner: '', intermediate: '', advanced: '' };
+                    targetClass.questionImages[level] = compressed;
+                    if (safeSet('smart_levels_data_v2', candidate)) {
+                        appData = candidate;
+                        pendingQuestionImages[level] = compressed;
+                        renderQuestionImagePreview(level, compressed);
+                        showToast('تم حفظ الصورة مع بيانات الفصل الحالية.');
+                    } else {
+                        showToast('مساحة التخزين غير كافية؛ لم يتم استبدال بياناتك المحفوظة.');
+                        input.value = '';
+                    }
+                };
+                img.onerror = () => showToast('تعذر قراءة الصورة. جرّبي صورة أخرى.');
+                img.src = reader.result;
+            };
+            reader.onerror = () => showToast('تعذر تحميل الصورة.');
+            reader.readAsDataURL(file);
+        }
         function openQuestionsModal(classId) {
             currentQuestionsClassId = classId;
             const c = appData.classes.find(x => x.id === classId);
             document.getElementById('q-beginner').value = c.questions.beginner || '';
             document.getElementById('q-intermediate').value = c.questions.intermediate || '';
             document.getElementById('q-advanced').value = c.questions.advanced || '';
+            pendingQuestionImages = { beginner: '', intermediate: '', advanced: '', ...(c.questionImages || {}) };
+            ['beginner', 'intermediate', 'advanced'].forEach(level => {
+                const input = document.getElementById('img-' + level);
+                if (input) input.value = '';
+                renderQuestionImagePreview(level, pendingQuestionImages[level]);
+            });
             document.getElementById('questionsModal').classList.remove('hidden');
         }
 
         function saveQuestions() {
             const c = appData.classes.find(x => x.id === currentQuestionsClassId);
+            if (!c) return;
             c.questions.beginner = document.getElementById('q-beginner').value;
             c.questions.intermediate = document.getElementById('q-intermediate').value;
             c.questions.advanced = document.getElementById('q-advanced').value;
+            if (!c.questionImages) c.questionImages = { beginner: '', intermediate: '', advanced: '' };
+            c.questionImages = { ...c.questionImages, ...pendingQuestionImages };
             saveData();
             closeModal('questionsModal');
         }
@@ -853,14 +930,21 @@
             renderRemainingQueue();
 
             document.getElementById('res-student-name').textContent = s.name;
-            const levelText = s.level === 'advanced' ? 'متقدم 🔴 (طالبة متفوقة)' : s.level === 'intermediate' ? 'متوسط 🟡 (طالبة متوسطة)' : 'مبتدئ 🟢 (تحتاج دعم)';
-            document.getElementById('res-student-level').textContent = levelText;
-            document.getElementById('res-level-badge').textContent = s.level === 'advanced' ? 'مستوى متقدم' : s.level === 'intermediate' ? 'مستوى متوسط' : 'مستوى مبتدئ';
-
-            let qText = c.questions[s.level] || "طرح سؤال عام مناسب للمستوى...";
+            const levelColor = s.level === 'advanced' ? '🔴' : s.level === 'intermediate' ? '🟡' : '🟢';
+            document.getElementById('res-level-badge').textContent = levelColor;
+            let qText = c.questions[s.level] || '';
             const qList = qText.split('\n').filter(Boolean);
             const randomQ = qList.length > 0 ? qList[Math.floor(Math.random() * qList.length)] : qText;
-            document.getElementById('res-question').textContent = randomQ;
+            document.getElementById('res-question').textContent = randomQ || ((c.questionImages && c.questionImages[s.level]) ? 'شاهدي الصورة ثم أجيبي ✨' : 'أضيفي سؤالًا من بنك الأسئلة.');
+            const questionImage = document.getElementById('res-question-image');
+            const imageData = c.questionImages && c.questionImages[s.level] ? c.questionImages[s.level] : '';
+            if (imageData) {
+                questionImage.src = imageData;
+                questionImage.classList.remove('hidden');
+            } else {
+                questionImage.removeAttribute('src');
+                questionImage.classList.add('hidden');
+            }
 
             document.getElementById('result-card').classList.remove('hidden');
         }
