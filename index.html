@@ -117,7 +117,7 @@
                         <div class="flex flex-wrap justify-between items-center mb-6">
                             <div>
                                 <h2 class="text-2xl font-black text-indigo-900">إدارة الفصول والمستويات</h2>
-                                <p class="text-sm text-gray-500">أضيفي فصلكِ ثم ابدئي بإضافة طالباتكِ وتصنيفهن (🟢 مبتدئ، 🟡 متوسط، 🔴 متقدم)</p>
+                                <p class="text-sm text-gray-500">أضيفي فصلكِ ثم ابدئي بإضافة طالباتكِ واستخدمي الرموز اللونية للتصنيف (🟢 🟡 🔴)</p>
                             </div>
                             <button onclick="openAddClassModal()" class="mt-3 sm:mt-0 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition flex items-center gap-2">
                                 <span>➕</span> إضافة فصل جديد
@@ -161,7 +161,7 @@
                             <div class="lg:col-span-6 space-y-6">
                                 <div id="result-card" class="hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-950 text-white p-6 rounded-3xl shadow-2xl relative overflow-hidden pulse-card border-2 border-amber-400">
                                     <div class="absolute -left-6 -bottom-6 text-8xl opacity-10">🎓</div>
-                                    <span id="res-level-badge" class="px-3.5 py-1 rounded-full text-xs font-black bg-amber-400 text-indigo-950 inline-block mb-3 shadow">مستوى متقدم</span>
+                                    <span id="res-level-badge" class="px-3.5 py-1 rounded-full text-xs font-black bg-amber-400 text-indigo-950 inline-block mb-3 shadow">🔴</span>
                                     <h3 class="text-3xl font-black mb-1 text-amber-200" id="res-student-name">اسم الطالبة</h3>
                                     <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-md border border-white/20 mb-4 shadow-inner">
                                         <p class="text-xs text-amber-300 font-semibold mb-1">السؤال:</p>
@@ -250,9 +250,9 @@
                 <form onsubmit="addStudent(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
                     <input type="text" id="studentNameInput" required placeholder="اسم الطالبة..." class="sm:col-span-5 border-2 border-indigo-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white">
                     <select id="studentLevelInput" class="sm:col-span-4 border-2 border-indigo-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none font-bold bg-white">
-                        <option value="beginner">🟢 مبتدئ (تحتاج دعم)</option>
-                        <option value="intermediate" selected>🟡 متوسط</option>
-                        <option value="advanced">🔴 متقدم (متفوقة)</option>
+                        <option value="beginner">🟢</option>
+                        <option value="intermediate" selected>🟡</option>
+                        <option value="advanced">🔴</option>
                     </select>
                     <button type="submit" class="sm:col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm py-2.5 shadow">إضافة</button>
                 </form>
@@ -1017,7 +1017,7 @@
             `;
 
             c.students.forEach(s => {
-                const levelBadge = s.level === 'advanced' ? '<span class="text-rose-600 font-bold">🔴 متقدم</span>' : s.level === 'intermediate' ? '<span class="text-amber-600 font-bold">🟡 متوسط</span>' : '<span class="text-emerald-600 font-bold">🟢 مبتدئ</span>';
+                const levelBadge = s.level === 'advanced' ? '<span class="text-rose-600 font-bold">🔴</span>' : s.level === 'intermediate' ? '<span class="text-amber-600 font-bold">🟡</span>' : '<span class="text-emerald-600 font-bold">🟢</span>';
                 html += `
                     <tr class="hover:bg-indigo-50/50 transition">
                         <td class="py-3.5 px-4 font-bold text-gray-800">${s.name}</td>
